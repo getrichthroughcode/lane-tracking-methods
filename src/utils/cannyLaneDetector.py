@@ -10,6 +10,45 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
 
+# === Helper class definition ===
+
+class helperFunction:
+    """
+    This class contains helper methods for the CannyLaneDetector.
+    """
+
+    def __init__(self):
+        print("=== Helper Function initialized ===")
+
+    def createGaussianKernel(self, sigma: float) -> np.ndarray:
+        """
+        Creates a normalized 2D Gaussian kernel.
+
+        Parameters
+        ----------
+        sigma : float
+            Standard deviation of the Gaussian.
+
+        Returns
+        -------
+        kernel : np.ndarray
+            A 2D Gaussian kernel.
+        """
+        kernel_size = int(2 * np.ceil(sigma) + 1)
+        kernel = np.zeros((kernel_size, kernel_size), dtype=np.float64)
+        center = kernel_size // 2
+
+        for y in range(kernel_size):
+            for x in range(kernel_size):
+                dx = x - center
+                dy = y - center
+                kernel[y, x] = (1 / (2 * np.pi * sigma ** 2)) * np.exp(
+                    -(dx ** 2 + dy ** 2) / (2 * sigma ** 2)
+                )
+
+        kernel /= np.sum(kernel)
+        return kernel
+
 # === Canny class definition ===
 
 
@@ -45,6 +84,7 @@ class cannyLaneDetector:
         self.gradThresh = gradThresh
         self.firstThresh = firstThresh
         self.secondThresh = secondThresh
+        self.utils = helperFunction()
 
     def readImg(self, imgPath: str) -> np.ndarray:
         """
@@ -128,19 +168,7 @@ class cannyLaneDetector:
         Apply Gaussian blur on a grayscale image.
         """
         if img.ndim != 2:
-            raise ValueError("Input image must be a grascale image. Nothing else.")
+            raise ValueError("Input image must be a grayscale image. Nothing else.")
 
-        kernelSize = int (2 * np.ceil(sigma) + 1)
-        kernel = np.zeros((kernelSize, kernelSize))
-        for y in range(kernelSize):
-            for x in range(kernelSize):
-                kernel[y, x] = (1 / 2 * np.pi * sigma * sigma) * (
-                    np.exp(
-                        -(
-                            ((x - kernelSize / 2) * (x - kernelSize / 2) + (y - kernelSize / 2) * (y - kernelSize / 2))
-                            / sigma * sigma
-                            
-                        )
-                    )
-                )
-        print(f"using this kernel for blurring : {kernel}")
+        kernel = self.utils.createGaussianKernel(sigma)
+        return kernel
