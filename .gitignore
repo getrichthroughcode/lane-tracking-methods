@@ -1,4 +1,14 @@
+# Formatting and linter 
 .flake8
 .mypy.ini
 .pytest_cache
+# Virtual environment
+.Perso/
 
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# large files
+data/raw/*

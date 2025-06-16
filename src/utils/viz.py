@@ -1,36 +1,39 @@
-import matplotlib.pyplot as plt
+import cv2 as cv
+import numpy as np
 from cannyLaneDetector import *
-from mpl_toolkits.mplot3d import Axes3D
-utils = helperFunction()
+import json
 
-def visuGaussianKernel():
-    sigma = 1.7
-    size = 5
-    kernel = utils.createGaussianKernel(sigma)
-    # Step 2: Prepare the 3D plot
-    x = np.linspace(-size // 2, size // 2, size)
-    y = np.linspace(-size // 2, size // 2, size)
-    x, y = np.meshgrid(x, y)
 
-    fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(111, projection='3d')
+def draw_lanes_on_binary_mask(label_entry: dict, image_size=(720, 1280)) -> np.ndarray:
+    """
+    Creates a binary image with ground-truth lanes drawn in white (255) on a black background.
 
-    # Step 3: Plot the surface
-    surf = ax.plot_surface(x, y, kernel, cmap='viridis', edgecolor='k')
-    # Axis limits and labels
-    ax.set_xlim(-size, size)
-    ax.set_ylim(-size, size)
+    Args:
+        label_entry (dict): A TuSimple label entry (one line from the JSON).
+        image_size (tuple): Height x Width of the binary mask.
 
-    ax.set_title("3D Gaussian Kernel Surface")
-    ax.set_xlabel("X axis")
-    ax.set_ylabel("Y axis")
-    ax.set_zlabel("Intensity")
-    fig.colorbar(surf, shrink=0.6)
+    Returns:
+        np.ndarray: A binary mask (uint8) with white lane lines.
+    """
+    h, w = image_size
+    mask = np.zeros((h, w), dtype=np.uint8)
 
-    plt.tight_layout()
-    plt.show()
+    h_samples = label_entry["h_samples"]
+    for lane in label_entry["lanes"]:
+        points = [(x, y) for x, y in zip(lane, h_samples) if x != -2]
+        for i in range(1, len(points)):
+            cv.line(mask, points[i - 1], points[i], color=255, thickness=2)
+
+    return mask
 
 
 
+with open("data/raw/groundTruth.json", "r") as f:
+    label_entry = json.loads(f.readline())
 
-visuGaussianKernel()    
+binary_mask = draw_lanes_on_binary_mask(label_entry)
+
+cv.imshow("Binary Lane GT", binary_mask)
+cv.waitKey(0)
+cv.destroyAllWindows()
+
